@@ -1,5 +1,5 @@
-import express from "express";
-import { deleteUserById, getUser, getUserById } from "../db/users";
+import express from 'express';
+import { deleteUserById, getUser, getUserById } from '../db/users';
 
 export const getAllusers = async (
   req: express.Request,
@@ -23,7 +23,7 @@ export const deleteUser = async (
     const deletedUser = await deleteUserById(id as string);
     return res.status(200).json(deletedUser);
   } catch (error) {
-    console.error(error, "this is the error");
+    console.error(error);
     res.sendStatus(400);
   }
 };

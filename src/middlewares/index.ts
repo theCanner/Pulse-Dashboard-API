@@ -1,6 +1,6 @@
-import express, { Request } from "express";
-import { env } from "../config/env";
-import jwt from "jsonwebtoken";
+import express, { Request } from 'express';
+import { env } from '../config/env';
+import jwt from 'jsonwebtoken';
 
 interface JwtPayload {
   userId: string;

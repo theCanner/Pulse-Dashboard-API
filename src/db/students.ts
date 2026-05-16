@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const StudentSchema = new mongoose.Schema({
   studentNumber: { type: String, unique: true, required: true },
@@ -12,7 +12,7 @@ const StudentSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    enum: ["active", "inactive", "graduated"],
-    default: "active",
+    enum: ['active', 'inactive', 'graduated'],
+    default: 'active',
   },
 });

@@ -1,10 +1,10 @@
-import express from "express";
-import { createUser, getUserByEmail, getUserById } from "../db/users";
-import bcrypt from "bcrypt";
-import { authentication } from "../helpers";
-import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-import { env } from "../config/env";
+import express from 'express';
+import { createUser, getUserByEmail, getUserById } from '../db/users';
+import bcrypt from 'bcrypt';
+import { authentication } from '../helpers';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+import { env } from '../config/env';
 dotenv.config();
 
 interface JwtPayload {
@@ -18,7 +18,7 @@ export const login = async (req: express.Request, res: express.Response) => {
     if (!email || !password) {
       return res.sendStatus(400);
     }
-    const user = await getUserByEmail(email).select("+authentication.password");
+    const user = await getUserByEmail(email).select('+authentication.password');
 
     if (!user) {
       return res.sendStatus(400);
@@ -44,7 +44,7 @@ export const login = async (req: express.Request, res: express.Response) => {
       },
       env.ACCESS_SECRET,
       {
-        expiresIn: "10s",
+        expiresIn: '10s',
       },
     );
 
@@ -55,28 +55,28 @@ export const login = async (req: express.Request, res: express.Response) => {
       },
       env.REFRESH_SECRET,
       {
-        expiresIn: "7d",
+        expiresIn: '7d',
       },
     );
 
     res.cookie(env.ACCESS_COOKIE, accessToken, {
       httpOnly: true,
-      secure: env.ENV === "prod",
-      sameSite: "lax",
-      path: "/",
+      secure: env.ENV === 'prod',
+      sameSite: 'lax',
+      path: '/',
     });
 
     res.cookie(env.REFRESH_COOKIE, refreshToken, {
       httpOnly: true,
-      secure: env.ENV === "prod",
-      sameSite: "lax",
-      path: "/",
+      secure: env.ENV === 'prod',
+      sameSite: 'lax',
+      path: '/',
     });
     user.refreshToken = refreshToken;
     await user.save();
     return res.status(200).json({
       status: 200,
-      message: "login successful",
+      message: 'login successful',
       data: {
         ...user.toJSON(),
       },
@@ -128,7 +128,7 @@ export const refreshToken = async (
 
     const decode = jwt.verify(token, env.REFRESH_SECRET) as JwtPayload;
 
-    const user = await getUserById(decode.userId).select("refreshToken");
+    const user = await getUserById(decode.userId).select('refreshToken');
     if (!user) {
       return res.sendStatus(400);
     }
@@ -142,14 +142,14 @@ export const refreshToken = async (
         email: user.email,
       },
       env.ACCESS_SECRET,
-      { expiresIn: "5m" },
+      { expiresIn: '5m' },
     );
 
     res.cookie(env.ACCESS_COOKIE, newAccessToken, {
       httpOnly: true,
-      secure: env.ENV === "prod",
-      sameSite: "lax",
-      path: "/",
+      secure: env.ENV === 'prod',
+      sameSite: 'lax',
+      path: '/',
     });
     return res.sendStatus(200);
   } catch (error) {

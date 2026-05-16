@@ -1,11 +1,11 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true },
   email: { type: String, required: true },
   role: {
     type: String,
-    enum: ["admin", "user"],
+    enum: ['admin', 'user'],
     required: true,
   },
   authentication: {
@@ -18,10 +18,10 @@ type UserJSON = {
   id: string;
   username: string;
   email: string;
-  role: "admin" | "user";
+  role: 'admin' | 'user';
 };
 
-userSchema.set("toJSON", {
+userSchema.set('toJSON', {
   transform: (doc, ret): UserJSON => {
     return {
       id: ret._id.toString(),
@@ -32,7 +32,7 @@ userSchema.set("toJSON", {
   },
 });
 
-export const userModel = mongoose.model("User", userSchema);
+export const userModel = mongoose.model('User', userSchema);
 
 export const getUser = () => userModel.find();
 export const getUserByEmail = (email: string) => userModel.findOne({ email });

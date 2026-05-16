@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const CourseSchema = new mongoose.Schema(
   {
@@ -11,14 +11,16 @@ const CourseSchema = new mongoose.Schema(
 
     isPublished: { type: Boolean, default: true },
 
-    instructor: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    instructor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true },
 );
 
-export const courseModel = mongoose.model("Course", CourseSchema);
+export const courseModel = mongoose.model('Course', CourseSchema);
 
 export const getCourse = () => courseModel.find();
+export const createCourse = (values: Record<string, unknown>) =>
+  new courseModel(values).save().then((user) => user.toObject());
 export const getCourseById = () => courseModel.findById();
 export const updateCourse = () => courseModel.findByIdAndUpdate();
 export const deleteCourse = () => courseModel.findByIdAndDelete();
