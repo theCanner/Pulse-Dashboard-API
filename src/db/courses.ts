@@ -12,3 +12,10 @@ const CourseSchema = new mongoose.Schema({
 
   instructor: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 }, { timestamps: true });
+
+export const courseModel = mongoose.model('Course',CourseSchema);
+
+export const getCourse = () => courseModel.find();
+export const getCourseById = () => courseModel.findById();
+export const updateCourse = () => courseModel.findByIdAndUpdate();
+export const deleteCourse = () => courseModel.findByIdAndDelete();
