@@ -7,5 +7,5 @@ export const env = {
   MONGO_URL: process.env.MONGO_URL as string,
   ACCESS_SECRET: process.env.ACCESS_SECRET as string,
   REFRESH_SECRET: process.env.REFRESH_SECRET as string,
-  ENV : process.env.NODE_ENV as string
-}; 
+  ENV: process.env.NODE_ENV as string,
+};

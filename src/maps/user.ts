@@ -1,4 +1,3 @@
-
 export interface PublicUser {
   id: string;
   username: string;
@@ -7,12 +6,11 @@ export interface PublicUser {
 }
 
 export type UserLike = {
-  _id: any;
+  _id: string;
   username: string;
   email: string;
   role: string;
 };
-
 
 export const toPublicUser = (user: UserLike): PublicUser => ({
   id: user._id.toString(),
