@@ -5,6 +5,7 @@ import { authentication } from '../helpers';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { env } from '../config/env';
+import { UserSchema } from '../validations/user.validation';
 dotenv.config();
 
 interface JwtPayload {
@@ -21,7 +22,7 @@ export const login = async (req: express.Request, res: express.Response) => {
     const user = await getUserByEmail(email).select('+authentication.password');
 
     if (!user) {
-      return res.sendStatus(400);
+      return res.status(400);
     }
 
     if (!user.authentication?.password) {
@@ -90,8 +91,14 @@ export const login = async (req: express.Request, res: express.Response) => {
 export const register = async (req: express.Request, res: express.Response) => {
   try {
     const { username, email, role, password } = req.body;
-    if (!username || !email || !password || !role) {
-      return res.sendStatus(400);
+
+    const parsed = UserSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      return res.status(400).json({
+        message: 'Validation Error',
+        errors: parsed.error.issues.map((issue) => issue.message),
+      });
     }
 
     const existingUser = await getUserByEmail(email);

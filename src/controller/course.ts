@@ -1,21 +1,20 @@
 import express from 'express';
 import { createCourse, getCourse, getCourseById } from '../db/courses';
+import { courseSchema } from '../validations/course.validation';
 
 export const registerCourse = async (
   req: express.Request,
   res: express.Response,
 ) => {
   try {
-    const { title, courseId, price, durationWeeks, isPublished } = req.body;
-    if (
-      !title ||
-      !courseId ||
-      price == null ||
-      durationWeeks == null ||
-      isPublished == null
-    ) {
+    const { title, courseId, price, description, durationWeeks, isPublished } =
+      req.body;
+
+    const parsed = courseSchema.safeParse(req.body);
+    if (!parsed.success) {
       return res.status(400).json({
-        message: 'Invalid Request',
+        message: 'Validation Error',
+        errors: parsed.error.issues.map((issue) => issue.message),
       });
     }
 
@@ -30,6 +29,7 @@ export const registerCourse = async (
     const course = await createCourse({
       courseId,
       title,
+      description,
       price,
       durationWeeks,
       isPublished,
