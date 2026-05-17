@@ -1,6 +1,7 @@
 import express from 'express';
 import { createCourse, getCourse, getCourseById } from '../db/courses';
 import { courseSchema } from '../validations/course.validation';
+import { apiResponse } from '../utils/apiResponse';
 
 export const registerCourse = async (
   req: express.Request,
@@ -12,16 +13,21 @@ export const registerCourse = async (
 
     const parsed = courseSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({
+      const errors = parsed.error.issues.map((issue) => issue.message);
+      return apiResponse({
+        res,
+        statusCode: 400,
         message: 'Validation Error',
-        errors: parsed.error.issues.map((issue) => issue.message),
+        errors,
       });
     }
 
     const isExistingCourse = await getCourseById(courseId);
 
     if (isExistingCourse) {
-      return res.status(400).json({
+      return apiResponse({
+        res,
+        statusCode: 400,
         message: 'Course already exist',
       });
     }
@@ -35,16 +41,17 @@ export const registerCourse = async (
       isPublished,
     });
 
-    return res.status(200).json({
-      message: 'Course Added',
-      data: {
-        course,
-      },
+    return apiResponse({
+      res,
+      data: course,
+      statusCode: 200,
+      message: 'Course Succesfully Added',
     });
   } catch (error) {
     console.error(error);
-    res.send(400).json({
-      status: 400,
+    return apiResponse({
+      res,
+      statusCode: 400,
       message: 'Invalid Request',
     });
   }
@@ -58,19 +65,23 @@ export const getAllCourse = async (
     const courses = await getCourse();
 
     if (!courses) {
-      res.status(400).json({
-        message: 'Invalid Request',
+      return apiResponse({
+        res,
+        statusCode: 400,
+        message: 'No available courses',
       });
     }
-
-    res.status(200).json({
-      status: 200,
-      message: 'Success Retrieve Sources',
+    return apiResponse({
+      res,
+      statusCode: 200,
+      message: 'Courses succesfully retrieved.',
       data: { courses },
     });
   } catch (error) {
     console.error(error);
-    res.status(400).json({
+    return apiResponse({
+      res,
+      statusCode: 400,
       message: 'Invalid Request',
     });
   }

@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { env } from '../config/env';
 import { UserSchema } from '../validations/user.validation';
+import { apiResponse } from '../utils/apiResponse';
 dotenv.config();
 
 interface JwtPayload {
@@ -17,16 +18,28 @@ export const login = async (req: express.Request, res: express.Response) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.sendStatus(400);
+      return apiResponse({
+        res,
+        statusCode: 400,
+        message: 'Invalid Request',
+      });
     }
     const user = await getUserByEmail(email).select('+authentication.password');
 
     if (!user) {
-      return res.status(400);
+      return apiResponse({
+        res,
+        statusCode: 400,
+        message: 'Invalid Request',
+      });
     }
 
     if (!user.authentication?.password) {
-      return res.sendStatus(400);
+      return apiResponse({
+        res,
+        statusCode: 400,
+        message: 'Invalid Request',
+      });
     }
 
     const isMatch = await bcrypt.compare(
@@ -35,7 +48,11 @@ export const login = async (req: express.Request, res: express.Response) => {
     );
 
     if (!isMatch) {
-      return res.sendStatus(403);
+      return apiResponse({
+        res,
+        statusCode: 403,
+        message: 'No Account Match',
+      });
     }
 
     const accessToken = jwt.sign(
@@ -45,7 +62,7 @@ export const login = async (req: express.Request, res: express.Response) => {
       },
       env.ACCESS_SECRET,
       {
-        expiresIn: '10s',
+        expiresIn: '5m',
       },
     );
 
@@ -75,8 +92,10 @@ export const login = async (req: express.Request, res: express.Response) => {
     });
     user.refreshToken = refreshToken;
     await user.save();
-    return res.status(200).json({
-      status: 200,
+
+    return apiResponse({
+      res,
+      statusCode: 200,
       message: 'login successful',
       data: {
         ...user.toJSON(),
@@ -84,7 +103,11 @@ export const login = async (req: express.Request, res: express.Response) => {
     });
   } catch (error) {
     console.error(error);
-    return res.sendStatus(400);
+    return apiResponse({
+      res,
+      statusCode: 400,
+      message: 'Invalid Request',
+    });
   }
 };
 
@@ -95,7 +118,9 @@ export const register = async (req: express.Request, res: express.Response) => {
     const parsed = UserSchema.safeParse(req.body);
 
     if (!parsed.success) {
-      return res.status(400).json({
+      return apiResponse({
+        res,
+        statusCode: 400,
         message: 'Validation Error',
         errors: parsed.error.issues.map((issue) => issue.message),
       });
@@ -104,7 +129,11 @@ export const register = async (req: express.Request, res: express.Response) => {
     const existingUser = await getUserByEmail(email);
 
     if (existingUser) {
-      return res.sendStatus(400);
+      return apiResponse({
+        res,
+        statusCode: 400,
+        message: 'User already exist',
+      });
     }
     const hash = await authentication(password);
     const user = await createUser({
@@ -115,10 +144,20 @@ export const register = async (req: express.Request, res: express.Response) => {
         password: hash,
       },
     });
-    return res.status(200).json(user);
+
+    return apiResponse({
+      res,
+      statusCode: 200,
+      message: 'Registered Succesfully',
+      data: user,
+    });
   } catch (error) {
     console.log(error);
-    return res.sendStatus(400);
+    return apiResponse({
+      res,
+      statusCode: 400,
+      message: 'Invalid Request',
+    });
   }
 };
 
@@ -130,17 +169,29 @@ export const refreshToken = async (
     const token = req.cookies[env.REFRESH_COOKIE];
 
     if (!token) {
-      return res.sendStatus(400);
+      return apiResponse({
+        res,
+        statusCode: 400,
+        message: 'No Token',
+      });
     }
 
     const decode = jwt.verify(token, env.REFRESH_SECRET) as JwtPayload;
 
     const user = await getUserById(decode.userId).select('refreshToken');
     if (!user) {
-      return res.sendStatus(400);
+      return apiResponse({
+        res,
+        statusCode: 400,
+        message: 'User not found',
+      });
     }
     if (user.refreshToken !== token) {
-      return res.sendStatus(400);
+      return apiResponse({
+        res,
+        statusCode: 400,
+        message: 'Invalid Token',
+      });
     }
 
     const newAccessToken = jwt.sign(
@@ -158,9 +209,17 @@ export const refreshToken = async (
       sameSite: 'lax',
       path: '/',
     });
-    return res.sendStatus(200);
+    return apiResponse({
+      res,
+      statusCode: 200,
+      message: 'token refreshed',
+    });
   } catch (error) {
     console.error(error);
-    return res.sendStatus(400);
+    return apiResponse({
+      res,
+      statusCode: 400,
+      message: 'Invalid Request',
+    });
   }
 };

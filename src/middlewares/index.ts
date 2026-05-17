@@ -1,6 +1,7 @@
 import express, { Request } from 'express';
 import { env } from '../config/env';
-import jwt from 'jsonwebtoken';
+import jwt, { TokenExpiredError } from 'jsonwebtoken';
+import { apiResponse } from '../utils/apiResponse';
 
 interface JwtPayload {
   userId: string;
@@ -24,17 +25,29 @@ export const isOwner = async (
     const currentUserId = req.user?.userId;
 
     if (!currentUserId) {
-      return res.sendStatus(403);
+      return apiResponse({
+        res,
+        statusCode: 404,
+        message: 'User not found',
+      });
     }
 
     if (currentUserId != id) {
-      return res.sendStatus(403);
+      return apiResponse({
+        res,
+        statusCode: 404,
+        message: 'Invalid User Id',
+      });
     }
 
     next();
   } catch (error) {
     console.error(error);
-    return res.sendStatus(400);
+    return apiResponse({
+      res,
+      statusCode: 401,
+      message: 'Unauthorized',
+    });
   }
 };
 
@@ -46,18 +59,28 @@ export const isAuthenticated = async (
   try {
     const token = req.cookies[env.ACCESS_COOKIE];
     if (!token) {
-      return res.sendStatus(403);
-    }
-
-    if (!token) {
-      return res.sendStatus(403);
+      return apiResponse({
+        res,
+        statusCode: 401,
+        message: 'No Token',
+      });
     }
     const decoded = jwt.verify(token, env.ACCESS_SECRET) as JwtPayload;
-
     req.user = decoded;
     return next();
   } catch (error) {
-    console.log(error);
-    return res.sendStatus(400);
+    if (error instanceof TokenExpiredError) {
+      return apiResponse({
+        res,
+        statusCode: 401,
+        message: 'Token expired',
+      });
+    }
+
+    return apiResponse({
+      res,
+      statusCode: 401,
+      message: 'Invalid expired',
+    });
   }
 };

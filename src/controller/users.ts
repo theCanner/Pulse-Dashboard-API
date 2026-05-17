@@ -1,5 +1,6 @@
 import express from 'express';
 import { deleteUserById, getUser, getUserById } from '../db/users';
+import { apiResponse } from '../utils/apiResponse';
 
 export const getAllusers = async (
   req: express.Request,
@@ -7,10 +8,19 @@ export const getAllusers = async (
 ) => {
   try {
     const users = await getUser();
-    return res.status(200).json(users);
+    return apiResponse({
+      res,
+      statusCode: 200,
+      message: 'Retrieved all users',
+      data: users,
+    });
   } catch (error) {
     console.error(error);
-    res.sendStatus(400);
+    return apiResponse({
+      res,
+      statusCode: 400,
+      message: 'Invalid Request',
+    });
   }
 };
 
@@ -24,7 +34,11 @@ export const deleteUser = async (
     return res.status(200).json(deletedUser);
   } catch (error) {
     console.error(error);
-    res.sendStatus(400);
+    return apiResponse({
+      res,
+      statusCode: 400,
+      message: 'Invalid Request',
+    });
   }
 };
 
@@ -37,7 +51,11 @@ export const updateUser = async (
     const { username } = req.body;
     const user = await getUserById(id as string);
     if (!user) {
-      return res.sendStatus(400);
+      return apiResponse({
+        res,
+        statusCode: 403,
+        message: 'User not found',
+      });
     }
 
     user.username = username;
@@ -46,6 +64,10 @@ export const updateUser = async (
     return res.status(200).json(user);
   } catch (error) {
     console.error(error);
-    res.sendStatus(400);
+    return apiResponse({
+      res,
+      statusCode: 400,
+      message: 'Invalid Request',
+    });
   }
 };
