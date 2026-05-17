@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const CourseSchema = new mongoose.Schema(
   {
+    courseId: { type: String, required: true, unique: true },
     title: { type: String, required: true },
     description: String,
 
@@ -10,8 +11,6 @@ const CourseSchema = new mongoose.Schema(
     durationWeeks: Number,
 
     isPublished: { type: Boolean, default: true },
-
-    instructor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true },
 );
@@ -20,7 +19,8 @@ export const courseModel = mongoose.model('Course', CourseSchema);
 
 export const getCourse = () => courseModel.find();
 export const createCourse = (values: Record<string, unknown>) =>
-  new courseModel(values).save().then((user) => user.toObject());
-export const getCourseById = () => courseModel.findById();
+  new courseModel(values).save().then((course) => course.toObject());
+export const getCourseById = (courseId: string) =>
+  courseModel.findOne({ courseId });
 export const updateCourse = () => courseModel.findByIdAndUpdate();
 export const deleteCourse = () => courseModel.findByIdAndDelete();
