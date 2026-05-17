@@ -6,12 +6,14 @@ import { apiResponse } from '../utils/apiResponse';
 interface JwtPayload {
   userId: string;
   email: string;
+  role: string;
 }
 
 export interface AuthRequest extends Request {
   user?: {
     userId: string;
     email: string;
+    role: string;
   };
 }
 
@@ -67,6 +69,44 @@ export const isAuthenticated = async (
     }
     const decoded = jwt.verify(token, env.ACCESS_SECRET) as JwtPayload;
     req.user = decoded;
+    return next();
+  } catch (error) {
+    if (error instanceof TokenExpiredError) {
+      return apiResponse({
+        res,
+        statusCode: 401,
+        message: 'Token expired',
+      });
+    }
+
+    return apiResponse({
+      res,
+      statusCode: 401,
+      message: 'Invalid expired',
+    });
+  }
+};
+
+export const isAdmin = async (
+  req: AuthRequest,
+  res: express.Response,
+  next: express.NextFunction,
+) => {
+  try {
+    if (!req.user) {
+      return apiResponse({
+        res,
+        statusCode: 401,
+        message: 'Unauthorized',
+      });
+    }
+    if (req.user.role !== 'admin') {
+      return apiResponse({
+        res,
+        statusCode: 403,
+        message: 'Invalid Access',
+      });
+    }
     return next();
   } catch (error) {
     if (error instanceof TokenExpiredError) {

@@ -38,7 +38,7 @@ export const getUser = () => userModel.find();
 export const getUserByEmail = (email: string) => userModel.findOne({ email });
 export const getUserById = (id: string) => userModel.findById(id);
 export const createUser = (values: Record<string, unknown>) =>
-  new userModel(values).save().then((user) => user.toObject());
+  new userModel(values).save().then((user) => user);
 export const deleteUserById = (id: string) => userModel.findByIdAndDelete(id);
 export const updateUserById = (id: string, values: Record<string, unknown>) =>
   userModel.findByIdAndUpdate(id, values);

@@ -22,5 +22,5 @@ export const createCourse = (values: Record<string, unknown>) =>
   new courseModel(values).save().then((course) => course.toObject());
 export const getCourseById = (courseId: string) =>
   courseModel.findOne({ courseId });
-export const updateCourse = () => courseModel.findByIdAndUpdate();
-export const deleteCourse = () => courseModel.findByIdAndDelete();
+export const deleteCourseById = (courseId: string) =>
+  courseModel.findOneAndDelete({ courseId });

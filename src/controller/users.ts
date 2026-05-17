@@ -61,7 +61,12 @@ export const updateUser = async (
     user.username = username;
     await user.save();
 
-    return res.status(200).json(user);
+    return apiResponse({
+      res,
+      statusCode: 200,
+      data: user,
+      message: 'Users updated succesfully',
+    });
   } catch (error) {
     console.error(error);
     return apiResponse({

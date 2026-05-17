@@ -1,7 +1,15 @@
 import express from 'express';
-import { getAllCourse, registerCourse } from '../controller/course';
+import {
+  deleteCourse,
+  getAllCourse,
+  registerCourse,
+  updateCourse,
+} from '../controller/course';
+import { isAdmin, isAuthenticated } from '../middlewares';
 
 export default (router: express.Router) => {
-  router.post('/courses/create', registerCourse);
   router.get('/courses', getAllCourse);
+  router.post('/courses/create', isAuthenticated, isAdmin, registerCourse);
+  router.patch('/courses/update/:id', isAuthenticated, isAdmin, updateCourse);
+  router.delete('/courses/delete/:id', isAuthenticated, isAdmin, deleteCourse);
 };

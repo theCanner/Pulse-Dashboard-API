@@ -59,6 +59,7 @@ export const login = async (req: express.Request, res: express.Response) => {
       {
         userId: user._id.toString(),
         email: user.email,
+        role: user.role,
       },
       env.ACCESS_SECRET,
       {
@@ -70,6 +71,7 @@ export const login = async (req: express.Request, res: express.Response) => {
       {
         userId: user._id.toString(),
         email: user.email,
+        role: user.role,
       },
       env.REFRESH_SECRET,
       {
@@ -113,8 +115,6 @@ export const login = async (req: express.Request, res: express.Response) => {
 
 export const register = async (req: express.Request, res: express.Response) => {
   try {
-    const { username, email, role, password } = req.body;
-
     const parsed = UserSchema.safeParse(req.body);
 
     if (!parsed.success) {
@@ -126,7 +126,8 @@ export const register = async (req: express.Request, res: express.Response) => {
       });
     }
 
-    const existingUser = await getUserByEmail(email);
+    const parsedUser = parsed.data;
+    const existingUser = await getUserByEmail(parsedUser.email);
 
     if (existingUser) {
       return apiResponse({
@@ -135,11 +136,9 @@ export const register = async (req: express.Request, res: express.Response) => {
         message: 'User already exist',
       });
     }
-    const hash = await authentication(password);
+    const hash = await authentication(parsedUser.password);
     const user = await createUser({
-      username,
-      email,
-      role,
+      ...parsedUser,
       authentication: {
         password: hash,
       },
@@ -149,7 +148,9 @@ export const register = async (req: express.Request, res: express.Response) => {
       res,
       statusCode: 200,
       message: 'Registered Succesfully',
-      data: user,
+      data: {
+        ...user.toJSON(),
+      },
     });
   } catch (error) {
     console.log(error);
@@ -177,8 +178,7 @@ export const refreshToken = async (
     }
 
     const decode = jwt.verify(token, env.REFRESH_SECRET) as JwtPayload;
-
-    const user = await getUserById(decode.userId).select('refreshToken');
+    const user = await getUserById(decode.userId).select('+refreshToken');
     if (!user) {
       return apiResponse({
         res,
@@ -193,11 +193,11 @@ export const refreshToken = async (
         message: 'Invalid Token',
       });
     }
-
     const newAccessToken = jwt.sign(
       {
         userId: user._id.toString(),
         email: user.email,
+        role: user.role,
       },
       env.ACCESS_SECRET,
       { expiresIn: '5m' },

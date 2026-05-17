@@ -11,3 +11,5 @@ export const courseSchema = z.object({
 
   isPublished: z.boolean(),
 });
+
+export const updateCourseSchema = courseSchema.partial();
