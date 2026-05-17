@@ -30,7 +30,7 @@ export const login = async (req: express.Request, res: express.Response) => {
       return apiResponse({
         res,
         statusCode: 400,
-        message: 'Invalid Request',
+        message: 'User Not Existed',
       });
     }
 
@@ -38,7 +38,7 @@ export const login = async (req: express.Request, res: express.Response) => {
       return apiResponse({
         res,
         statusCode: 400,
-        message: 'Invalid Request',
+        message: 'Invalid Credentials',
       });
     }
 
@@ -221,5 +221,59 @@ export const refreshToken = async (
       statusCode: 400,
       message: 'Invalid Request',
     });
+  }
+};
+
+const clearCache = (res: express.Response) => {
+  res.clearCookie(env.ACCESS_COOKIE, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: env.ENV === 'prod',
+    path: '/',
+  });
+
+  res.clearCookie(env.REFRESH_COOKIE, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: env.ENV === 'prod',
+    path: '/',
+  });
+
+  return apiResponse({
+    res,
+    statusCode: 200,
+    message: 'Logout succesfully',
+  });
+};
+
+export const logout = async (req: express.Request, res: express.Response) => {
+  try {
+    const refreshToken = req.cookies[env.REFRESH_COOKIE];
+
+    if (!refreshToken) {
+      return clearCache(res);
+    }
+
+    let decoded: JwtPayload;
+    try {
+      decoded = jwt.verify(refreshToken, env.REFRESH_SECRET) as JwtPayload;
+    } catch {
+      return clearCache(res);
+    }
+
+    const user = await getUserById(decoded.userId).select('+refreshToken');
+    if (!user) {
+      return apiResponse({
+        res,
+        statusCode: 403,
+        message: 'User not found.',
+      });
+    }
+    user.refreshToken = null;
+    await user.save();
+    return clearCache(res);
+  } catch (error) {
+    console.log(error);
+    return clearCache(res);
   }
 };
