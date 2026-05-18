@@ -1,22 +1,22 @@
 import express from 'express';
-import {
-  createCourse,
-  deleteCourseById,
-  getCourse,
-  getCourseById,
-} from '../db/courses';
-import {
-  CourseSchema,
-  UpdateCourseSchema,
-} from '../validations/course.validation';
 import { apiResponse } from '../utils/apiResponse';
+import {
+  StudentSchema,
+  UpdateStudentSchema,
+} from '../validations/students.validation';
+import {
+  createStudent,
+  deleteStudentById,
+  getStudentById,
+  getStudents,
+} from '../db/students';
 
-export const registerCourse = async (
+export const registerStudent = async (
   req: express.Request,
   res: express.Response,
 ) => {
   try {
-    const parsed = CourseSchema.safeParse(req.body);
+    const parsed = StudentSchema.safeParse(req.body);
     if (!parsed.success) {
       const errors = parsed.error.issues.map((issue) => issue.message);
       return apiResponse({
@@ -27,27 +27,16 @@ export const registerCourse = async (
       });
     }
 
-    const courseParsed = parsed.data;
-
-    const isExistingCourse = await getCourseById(courseParsed.courseId);
-
-    if (isExistingCourse) {
-      return apiResponse({
-        res,
-        statusCode: 400,
-        message: 'Course already exist',
-      });
-    }
-
-    const course = await createCourse({
-      ...courseParsed,
+    const studentParsed = parsed.data;
+    const student = await createStudent({
+      ...studentParsed,
     });
 
     return apiResponse({
       res,
-      data: course,
+      data: student,
       statusCode: 200,
-      message: 'Course Succesfully Added',
+      message: 'Student Succesfully Added',
     });
   } catch (error) {
     console.error(error);
@@ -59,14 +48,14 @@ export const registerCourse = async (
   }
 };
 
-export const getAllCourse = async (
+export const getAllStudents = async (
   req: express.Request,
   res: express.Response,
 ) => {
   try {
-    const courses = await getCourse();
+    const students = await getStudents();
 
-    if (!courses) {
+    if (!students) {
       return apiResponse({
         res,
         statusCode: 400,
@@ -77,7 +66,7 @@ export const getAllCourse = async (
       res,
       statusCode: 200,
       message: 'Courses succesfully retrieved.',
-      data: { courses },
+      data: { students },
     });
   } catch (error) {
     console.error(error);
@@ -89,19 +78,19 @@ export const getAllCourse = async (
   }
 };
 
-export const updateCourse = async (
+export const updateStudent = async (
   req: express.Request,
   res: express.Response,
 ) => {
   try {
     const { id } = req.params;
-    const parsed = UpdateCourseSchema.safeParse(req.body);
+    const parsed = UpdateStudentSchema.safeParse(req.body);
 
     if (!id) {
       return apiResponse({
         res,
         statusCode: 400,
-        message: 'Invalid Id',
+        message: 'Invalid Student Id',
       });
     }
     if (!parsed.success) {
@@ -114,9 +103,9 @@ export const updateCourse = async (
       });
     }
 
-    const course = await getCourseById(id as string);
+    const student = await getStudentById(id as string);
 
-    if (!course) {
+    if (!student) {
       return apiResponse({
         res,
         statusCode: 403,
@@ -124,13 +113,13 @@ export const updateCourse = async (
       });
     }
 
-    Object.assign(course, parsed.data);
-    await course.save();
+    Object.assign(student, parsed.data);
+    await student.save();
     return apiResponse({
       res,
       statusCode: 200,
-      message: 'Courses Updated',
-      data: course,
+      message: 'Student Updated',
+      data: student,
     });
   } catch (error) {
     console.error(error);
@@ -142,7 +131,7 @@ export const updateCourse = async (
   }
 };
 
-export const deleteCourse = async (
+export const deleteStudent = async (
   req: express.Request,
   res: express.Response,
 ) => {
@@ -157,9 +146,9 @@ export const deleteCourse = async (
       });
     }
 
-    const course = await getCourseById(id as string);
+    const student = await getStudentById(id as string);
 
-    if (!course) {
+    if (!student) {
       return apiResponse({
         res,
         statusCode: 400,
@@ -167,11 +156,11 @@ export const deleteCourse = async (
       });
     }
 
-    await deleteCourseById(id as string);
+    await deleteStudentById(id as string);
     return apiResponse({
       res,
       statusCode: 200,
-      message: 'Course succesfuly deleted',
+      message: 'Student succesfuly deleted',
     });
   } catch (error) {
     console.error(error);

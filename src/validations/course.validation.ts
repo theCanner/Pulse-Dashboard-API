@@ -1,6 +1,6 @@
 import * as z from 'zod';
 
-export const courseSchema = z.object({
+export const CourseSchema = z.object({
   title: z.string().min(1, 'Title is required'),
 
   courseId: z.string().min(1, 'Course ID is required'),
@@ -12,4 +12,4 @@ export const courseSchema = z.object({
   isPublished: z.boolean(),
 });
 
-export const updateCourseSchema = courseSchema.partial();
+export const UpdateCourseSchema = CourseSchema.partial();

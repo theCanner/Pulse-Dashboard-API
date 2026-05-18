@@ -33,6 +33,6 @@ server.listen(8282, () => {
 mongoose
   .connect(env.MONGO_URL)
   .then(() => console.log('MongoDB connected'))
-  .catch((err) => console.log(err));
+  .catch((err) => console.error(err));
 
 app.use('/', router());

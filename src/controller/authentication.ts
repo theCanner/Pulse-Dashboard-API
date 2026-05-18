@@ -153,7 +153,7 @@ export const register = async (req: express.Request, res: express.Response) => {
       },
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return apiResponse({
       res,
       statusCode: 400,
@@ -273,7 +273,7 @@ export const logout = async (req: express.Request, res: express.Response) => {
     await user.save();
     return clearCache(res);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return clearCache(res);
   }
 };
