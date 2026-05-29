@@ -63,7 +63,7 @@ export const login = async (req: express.Request, res: express.Response) => {
       },
       env.ACCESS_SECRET,
       {
-        expiresIn: '5m',
+        expiresIn: '1h',
       },
     );
 
@@ -200,7 +200,7 @@ export const refreshToken = async (
         role: user.role,
       },
       env.ACCESS_SECRET,
-      { expiresIn: '5m' },
+      { expiresIn: '1h' },
     );
 
     res.cookie(env.ACCESS_COOKIE, newAccessToken, {
@@ -275,5 +275,28 @@ export const logout = async (req: express.Request, res: express.Response) => {
   } catch (error) {
     console.error(error);
     return clearCache(res);
+  }
+};
+
+export const isMe = async (req: express.Request, res: express.Response) => {
+  try {
+    const refreshToken = req.cookies[env.REFRESH_COOKIE];
+
+    if (!refreshToken) {
+      return res.status(401).json({ message: 'Unauthenticated' });
+    }
+
+    const decoded = jwt.verify(refreshToken, env.REFRESH_SECRET) as JwtPayload;
+
+    return res.status(200).json({
+      message: 'Authenticated',
+      user: {
+        userId: decoded.userId,
+        email: decoded.email,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(401).json({ message: 'Invalid or expired session' });
   }
 };

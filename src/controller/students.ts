@@ -53,20 +53,32 @@ export const getAllStudents = async (
   res: express.Response,
 ) => {
   try {
-    const students = await getStudents();
+    const { search, field, limit, page } = req.query;
 
+    const filters = {
+      search: search as string | undefined,
+      limit: limit as number | undefined,
+      page: page as number | undefined,
+      field: field as
+        | 'studentName'
+        | 'status'
+        | 'studentId'
+        | 'email'
+        | undefined,
+    };
+    const students = await getStudents(filters);
     if (!students) {
       return apiResponse({
         res,
         statusCode: 400,
-        message: 'No available courses',
+        message: 'No available students',
       });
     }
     return apiResponse({
       res,
       statusCode: 200,
-      message: 'Courses succesfully retrieved.',
-      data: { students },
+      message: 'Students succesfully retrieved.',
+      data: students,
     });
   } catch (error) {
     console.error(error);

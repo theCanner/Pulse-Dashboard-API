@@ -1,22 +1,53 @@
-import mongoose, { PipelineStage } from 'mongoose';
+import mongoose, { HydratedDocument, PipelineStage } from 'mongoose';
+import { generateSequenceId } from './counter';
+import { buildId } from '../helpers';
 
 type EnrollmentFilters = {
   search?: string;
-  status?: 'active' | 'completed' | 'dropped';
+  field?:
+    | 'studentName'
+    | 'courseTitle'
+    | 'status'
+    | 'enrollmentId'
+    | 'course'
+    | 'enrollmentid'
+    | 'student';
   startDate?: string;
   endDate?: string;
+  page?: number;
+  limit?: number;
 };
 
-type EnrollmentMatch = {
+interface IEnrollment {
+  enrollmentId: string;
+  student?: string;
+  course?: string;
   status?: 'active' | 'completed' | 'dropped';
+  progress?: number;
+  enrolledAt?: Date;
+}
+
+type EnrollmentMatch = {
   enrolledAt?: {
     $gte?: Date;
     $lte?: Date;
   };
 };
 
+type SearchCondition =
+  | { 'student.firstName': RegExp }
+  | { 'student.lastName': RegExp }
+  | { 'course.title': RegExp }
+  | { status: RegExp }
+  | { enrollmentId: RegExp };
+
 const EnrollmentSchema = new mongoose.Schema(
   {
+    enrollmentId: {
+      type: String,
+      unique: true,
+      index: true,
+    },
     student: { type: mongoose.Schema.ObjectId, ref: 'Student', required: true },
     course: { type: mongoose.Schema.ObjectId, ref: 'Course', required: true },
     status: {
@@ -30,32 +61,71 @@ const EnrollmentSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+EnrollmentSchema.pre(
+  'save',
+  async function (this: HydratedDocument<IEnrollment>) {
+    if (!this.isNew) return;
+    if (this.enrollmentId) return;
+
+    const year = new Date().getFullYear();
+
+    const sequence = await generateSequenceId(`enrollment-${year}`);
+
+    this.enrollmentId = buildId('ENR', year, sequence);
+  },
+);
+
 export const enrollmentModel = mongoose.model('Enrollment', EnrollmentSchema);
 
 export const createEnrollment = (values: Record<string, unknown>) =>
   new enrollmentModel(values).save().then((e) => e.toObject());
 
-export const getEnrollments = async (filters: EnrollmentFilters) => {
+export const getEnrollments = async (filters: EnrollmentFilters = {}) => {
+  const page = Math.max(Number(filters.page) || 1, 1);
+  const limit = Math.max(Number(filters.limit) || 20, 1);
+  const skip = (page - 1) * limit;
   const pipeline: PipelineStage[] = [];
-
-  // JOIN student
   pipeline.push({
     $lookup: {
       from: 'students',
-      localField: 'student',
-      foreignField: '_id',
+      let: { studentId: '$student' },
+      pipeline: [
+        {
+          $match: {
+            $expr: { $eq: ['$_id', '$$studentId'] },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            firstName: 1,
+            lastName: 1,
+          },
+        },
+      ],
       as: 'student',
     },
   });
 
   pipeline.push({ $unwind: '$student' });
 
-  // JOIN course
   pipeline.push({
     $lookup: {
       from: 'courses',
-      localField: 'course',
-      foreignField: '_id',
+      let: { courseId: '$course' },
+      pipeline: [
+        {
+          $match: {
+            $expr: { $eq: ['$_id', '$$courseId'] },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            title: 1,
+          },
+        },
+      ],
       as: 'course',
     },
   });
@@ -64,12 +134,6 @@ export const getEnrollments = async (filters: EnrollmentFilters) => {
 
   const match: EnrollmentMatch = {};
 
-  // STATUS FILTER
-  if (filters.status) {
-    match.status = filters.status;
-  }
-
-  // DATE FILTER
   if (filters.startDate || filters.endDate) {
     match.enrolledAt = {};
 
@@ -78,29 +142,99 @@ export const getEnrollments = async (filters: EnrollmentFilters) => {
     }
 
     if (filters.endDate) {
-      match.enrolledAt.$lte = new Date(filters.endDate);
+      const end = new Date(filters.endDate);
+      end.setHours(23, 59, 59, 999);
+      match.enrolledAt.$lte = end;
     }
   }
 
-  // APPLY MATCH FILTERS
   if (Object.keys(match).length > 0) {
     pipeline.push({ $match: match });
   }
-
-  // SEARCH (student name + course title)
-  if (filters.search) {
+  console.log(filters);
+  if (filters.search && filters.field) {
     const regex = new RegExp(filters.search, 'i');
 
-    pipeline.push({
-      $match: {
-        $or: [
-          { 'student.firstName': regex },
-          { 'student.lastName': regex },
-          { 'course.title': regex },
-        ],
-      },
-    });
+    let conditions: SearchCondition[] = [];
+
+    if (filters.field === 'studentName' || filters.field === 'student') {
+      conditions = [
+        { 'student.firstName': regex },
+        { 'student.lastName': regex },
+      ];
+    }
+
+    if (filters.field === 'enrollmentId' || filters.field === 'enrollmentid') {
+      conditions = [{ enrollmentId: regex }];
+    }
+
+    if (filters.field === 'courseTitle' || filters.field === 'course') {
+      conditions = [{ 'course.title': regex }];
+    }
+
+    if (filters.field === 'status') {
+      conditions = [{ status: regex }];
+    }
+
+    if (conditions.length > 0) {
+      pipeline.push({
+        $match: { $or: conditions },
+      });
+    }
   }
 
-  return enrollmentModel.aggregate(pipeline);
+  pipeline.push({
+    $project: {
+      _id: 1,
+      enrollmentId: 1,
+      student: {
+        $concat: ['$student.firstName', ' ', '$student.lastName'],
+      },
+      course: '$course.title',
+      status: 1,
+      progress: 1,
+      enrolledAt: 1,
+      createdAt: 1,
+      updatedAt: 1,
+    },
+  });
+
+  pipeline.push({
+    $facet: {
+      data: [{ $sort: { createdAt: -1 } }, { $skip: skip }, { $limit: limit }],
+      metadata: [{ $count: 'totalDocuments' }],
+    },
+  });
+
+  pipeline.push({
+    $project: {
+      data: 1,
+      page: { $literal: page },
+      limit: { $literal: limit },
+      totalDocuments: {
+        $ifNull: [{ $arrayElemAt: ['$metadata.totalDocuments', 0] }, 0],
+      },
+      totalPages: {
+        $ceil: {
+          $divide: [
+            {
+              $ifNull: [{ $arrayElemAt: ['$metadata.totalDocuments', 0] }, 0],
+            },
+            limit,
+          ],
+        },
+      },
+    },
+  });
+
+  const result = await enrollmentModel.aggregate(pipeline);
+  return (
+    result[0] ?? {
+      data: [],
+      page,
+      limit,
+      totalDocuments: 0,
+      totalPages: 0,
+    }
+  );
 };

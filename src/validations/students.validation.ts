@@ -1,8 +1,7 @@
 import * as z from 'zod';
 
 export const StudentSchema = z.object({
-  firstName: z.string().min(1, 'Firstname is required'),
-  lastName: z.string().min(1, 'Lastname is required'),
+  studentName: z.string().min(1, 'Firstname is required'),
   email: z.email({ message: 'Invalid email format' }),
   phone: z
     .string()

@@ -46,11 +46,20 @@ export const getEnrollment = async (
   res: express.Response,
 ) => {
   try {
-    const { search, status, startDate, endDate } = req.query;
+    const { search, field, status, startDate, endDate, limit, page } =
+      req.query;
 
     const filters = {
       search: search as string | undefined,
-      status: status as 'active' | 'completed' | 'dropped' | undefined,
+      limit: limit as number | undefined,
+      page: page as number | undefined,
+      field: field as
+        | 'studentName'
+        | 'courseTitle'
+        | 'status'
+        | 'enrollmentId'
+        | undefined,
+      status: status as string | undefined,
       startDate: startDate as string | undefined,
       endDate: endDate as string | undefined,
     };
