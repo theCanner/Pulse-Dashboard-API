@@ -51,7 +51,7 @@ export const login = async (req: express.Request, res: express.Response) => {
       return apiResponse({
         res,
         statusCode: 403,
-        message: 'No Account Match',
+        message: 'Account doesn`t exist.',
       });
     }
 

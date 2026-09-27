@@ -75,7 +75,7 @@ export const isAuthenticated = async (
       return apiResponse({
         res,
         statusCode: 401,
-        message: 'Token expired',
+        message: 'Token Expired',
       });
     }
 
@@ -113,7 +113,7 @@ export const isAdmin = async (
       return apiResponse({
         res,
         statusCode: 401,
-        message: 'Token expired',
+        message: 'Token Expired',
       });
     }
 

@@ -9,7 +9,7 @@ import {
 } from '../controller/students';
 
 export default (router: express.Router) => {
-  router.get('/students', getAllStudents);
+  router.get('/students', isAuthenticated, getAllStudents);
   router.post('/students/create', isAuthenticated, isAdmin, registerStudent);
   router.patch('/students/update/:id', isAuthenticated, isAdmin, updateStudent);
   router.delete(

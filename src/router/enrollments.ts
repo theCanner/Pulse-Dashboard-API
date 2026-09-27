@@ -3,6 +3,6 @@ import { createEnrollments, getEnrollment } from '../controller/enrollments';
 import { isAuthenticated } from '../middlewares';
 
 export default (router: express.Router) => {
-  router.post('/enrollments/create', createEnrollments);
-  router.get('/enrollments', getEnrollment);
+  router.post('/enrollments/create', isAuthenticated, createEnrollments);
+  router.get('/enrollments', isAuthenticated, getEnrollment);
 };
